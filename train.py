@@ -18,7 +18,10 @@ from args import get_train_args
 from collections import OrderedDict
 from json import dumps
 # from models import BiDAF
-from torch.utils.tensorboard import SummaryWriter
+try:
+    from torch.utils.tensorboard import SummaryWriter
+except:
+    from tensorboardX import SummaryWriter 
 from tqdm import tqdm
 from ujson import load as json_load
 from util import collate_fn, SQuAD
