@@ -17,7 +17,6 @@ import util
 from args import get_train_args
 from collections import OrderedDict
 from json import dumps
-# from models import BiDAF
 try:
     from torch.utils.tensorboard import SummaryWriter
 except:
@@ -53,7 +52,8 @@ def main(args):
     model = BiDAF(word_vectors=word_vectors,
                   char_vectors=char_vectors,
                   hidden_size=args.hidden_size,
-                  drop_prob=args.drop_prob)
+                  drop_prob=args.drop_prob,
+                  embed_channels=args.char_embed_channel)
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
         log.info(f'Loading checkpoint from {args.load_path}...')
@@ -74,7 +74,7 @@ def main(args):
     # Get optimizer and scheduler
     optimizer = optim.Adadelta(model.parameters(), args.lr,
                                weight_decay=args.l2_wd)
-    scheduler = sched.LambdaLR(optimizer, lambda s: 1.)  # Constant LR
+    scheduler = sched.LambdaLR(optimizer, lambda s: 1.  )  # Constant LR
 
     # Get data loader
     log.info('Building dataset...')

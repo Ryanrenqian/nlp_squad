@@ -243,3 +243,7 @@ def add_train_test_args(parser):
                         type=str,
                         default=None,
                         help='Path to load as a model checkpoint.')
+    parser.add_argument('--char_embed_channel',
+                        type=int,
+                        default=25,
+                        help='Path to load as a model checkpoint.')
