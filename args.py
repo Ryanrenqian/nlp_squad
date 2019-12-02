@@ -7,11 +7,12 @@ Author:
 import argparse
 
 
+
 def get_setup_args():
     """Get arguments needed in setup.py."""
     parser = argparse.ArgumentParser('Download and pre-process SQuAD')
 
-    add_common_args(parser)
+
 
     parser.add_argument('--train_url',
                         type=str,
@@ -80,9 +81,8 @@ def get_setup_args():
                         type=lambda s: s.lower().startswith('t'),
                         default=True,
                         help='Process examples from the test set')
-
     args = parser.parse_args()
-
+    add_common_args(parser)
     return args
 
 
