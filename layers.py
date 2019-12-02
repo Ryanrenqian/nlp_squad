@@ -265,7 +265,7 @@ class SelfAttention(nn.Module):
             nn.init.xavier_uniform_(Wqs[i])
             nn.init.xavier_uniform_(Wks[i])
             nn.init.xavier_uniform_(Wvs[i])
-        self.Wo=nn.parameter(Wo)
+        self.Wo=nn.Parameter(Wo)
         self.Wqs=nn.ParameterList([nn.Parameter(X) for X in Wqs])
         self.Wks = nn.ParameterList([nn.Parameter(X) for X in Wks])
         self.Wvs = nn.ParameterList([nn.Parameter(X) for X in Wvs])
