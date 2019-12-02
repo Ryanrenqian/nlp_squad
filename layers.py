@@ -252,16 +252,15 @@ class BiDAFOutput(nn.Module):
 
 class SelfAttention(nn.Module):
     def __init__(self,d_model,d_k,n_head):
+        super(SelfAttention).__init__()
         self.n_head = n_head
         self.d_k=d_k
-        super(SelfAttention).__init__()
         Wo = torch.empty(d_model,d_k*n_head)
         Wqs = [torch.empty(d_model,d_k) for _ in range(n_head)]
         Wks = [torch.empty(d_model, d_k) for _ in range(n_head)]
         Wvs = [torch.empty(d_model, d_k) for _ in range(n_head)]
         # init params
         nn.init.kaiming_uniform_(Wo)
-
         for i in range(n_head):
             nn.init.xavier_uniform_(Wqs[i])
             nn.init.xavier_uniform_(Wks[i])
