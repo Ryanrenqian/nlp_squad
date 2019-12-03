@@ -24,7 +24,7 @@ except:
 from tqdm import tqdm
 from ujson import load as json_load
 from util import collate_fn, SQuAD
-from models import BiDAF
+from models import BiDAF,MultHeadBiDAF
 
 def main(args):
     # Set up logging and devices
@@ -49,12 +49,12 @@ def main(args):
     # print(word_vectors.shape)
     # Get model
     log.info('Building model...')
-    model = BiDAF(word_vectors=word_vectors,
+    model = MultHeadBiDAF(word_vectors=word_vectors,
                   char_vectors=char_vectors,
                   hidden_size=args.hidden_size,
                   drop_prob=args.drop_prob,
                   embed_channels=args.char_embed_channel)
-    tbx.add_graph(model)
+    # tbx.add_graph(model)
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
         log.info(f'Loading checkpoint from {args.load_path}...')
@@ -161,7 +161,6 @@ def main(args):
                                    step=step,
                                    split='dev',
                                    num_visuals=args.num_visuals)
-
 
 def evaluate(model, data_loader, device, eval_file, max_len, use_squad_v2):
     nll_meter = util.AverageMeter()

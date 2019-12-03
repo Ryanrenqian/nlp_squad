@@ -28,7 +28,7 @@ class BiDAF(nn.Module):
         hidden_size (int): Number of features in the hidden state at each layer.
         drop_prob (float): Dropout probability.
     """
-    def __init__(self, word_vectors,char_vectors, hidden_size, embed_channels,drop_prob=0.):
+    def __init__(self, word_vectors,char_vectors, hidden_size,embed_channels,drop_prob=0.):
         super(BiDAF, self).__init__()
         self.emb = layers.Embedding(word_vectors=word_vectors,
                                  char_vectors=char_vectors,
@@ -71,8 +71,9 @@ class BiDAF(nn.Module):
 
         return out
 
-class MultiBiDAF(nn.Module):
-    """MultiHead BiDAF model for SQuAD.
+
+class MultHeadBiDAF(nn.Module):
+    """Baseline MultHead model for SQuAD.
 
     Based on the paper:
     "Bidirectional Attention Flow for Machine Comprehension"
@@ -91,13 +92,16 @@ class MultiBiDAF(nn.Module):
         hidden_size (int): Number of features in the hidden state at each layer.
         drop_prob (float): Dropout probability.
     """
-    def __init__(self, word_vectors,char_vectors, hidden_size, embed_channels,drop_prob=0.):
-        super(BiDAF, self).__init__()
+
+    def __init__(self, word_vectors,char_vectors, hidden_size, embed_channels,drop_prob=0.,d_k=5,n_head=1):
+        super(MultHeadBiDAF, self).__init__()
         self.emb = layers.Embedding(word_vectors=word_vectors,
                                  char_vectors=char_vectors,
                                  hidden_size=hidden_size,
                                  drop_prob=drop_prob,
                                  out_channels=embed_channels)
+        # self.self_attention = layers.SelfAttention(hidden_size,d_k,n_head)
+        self.self_att = nn.MultiheadAttention(embed_dim=hidden_size,num_heads=1)
         self.enc = layers.RNNEncoder(input_size=hidden_size,
                                   hidden_size=hidden_size,
                                   num_layers=1,
@@ -122,9 +126,11 @@ class MultiBiDAF(nn.Module):
         c_emb = self.emb(cw_idxs,cc_idxs)         # cw_idxs:(batch_size, c_len, hidden_size)
         q_emb = self.emb(qw_idxs,qc_idxs)         # (batch_size, q_len, hidden_size)
 
+        q_emb,weight =self.self_att(q_emb,q_emb,q_emb) # ()
+        c_emb,weight = self.self_att(c_emb,c_emb,c_emb) # ()
+
         c_enc = self.enc(c_emb, c_len)    # (batch_size, c_len, 2 * hidden_size)
         q_enc = self.enc(q_emb, q_len)    # (batch_size, q_len, 2 * hidden_size)
-
         att = self.att(c_enc, q_enc,
                        c_mask, q_mask)    # (batch_size, c_len, 8 * hidden_size)
 

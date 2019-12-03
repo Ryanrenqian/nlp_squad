@@ -4,13 +4,13 @@ Author:
     Chris Chute (chute@stanford.edu)
 """
 
-import torch
+import torch,math
 import torch.nn as nn
 import torch.nn.functional as F
 import pdb
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 from util import masked_softmax
-
+from sublayer import *
 
 class Embedding(nn.Module):
     """Embedding layer used by BiDAF, without the character-level component.
@@ -246,3 +246,53 @@ class BiDAFOutput(nn.Module):
         log_p2 = masked_softmax(logits_2.squeeze(), mask, log_softmax=True)
 
         return log_p1, log_p2
+
+class SelfAttention(nn.Module):
+    def __init__(self,d_model,d_k,n_head):
+        super(SelfAttention,self).__init__()
+        self.n_head = n_head
+        self.d_k=d_k
+        Wo = torch.empty(d_model,d_k*n_head)
+        Wqs = [torch.empty(d_model,d_k) for _ in range(n_head)]
+        Wks = [torch.empty(d_model, d_k) for _ in range(n_head)]
+        Wvs = [torch.empty(d_model, d_k) for _ in range(n_head)]
+        # init params
+        nn.init.kaiming_uniform_(Wo)
+        for i in range(n_head):
+            nn.init.xavier_uniform_(Wqs[i])
+            nn.init.xavier_uniform_(Wks[i])
+            nn.init.xavier_uniform_(Wvs[i])
+        self.Wo=nn.Parameter(Wo)
+        self.Wqs=nn.ParameterList([nn.Parameter(X) for X in Wqs])
+        self.Wks = nn.ParameterList([nn.Parameter(X) for X in Wks])
+        self.Wvs = nn.ParameterList([nn.Parameter(X) for X in Wvs])
+
+    def forward(self,x,mask):
+        '''
+
+        :param x:  (batch_size, len, hidden_size)
+        :param mask: (batch_size, len, E)
+        :return:
+        '''
+        WQs, WKs, WVs = [], [], []
+        sqrt_d_k_inv = 1 / math.sqrt(self.d_k)
+        x = x.transpose(1, 2)
+        hmask = mask.unsqueeze(1)
+        vmask = mask.unsqueeze(2)
+        for i in range(self.n_head):
+            WQs.append(torch.matmul(x, self.Wqs[i]))
+            WKs.append(torch.matmul(x, self.Wks[i]))
+            WVs.append(torch.matmul(x, self.Wvs[i]))
+        heads = []
+        for i in range(self.n_head):
+            out = torch.bmm(WQs[i], WKs[i].transpose(1, 2))
+            out = torch.mul(out, sqrt_d_k_inv)
+            out = masked_softmax(out, hmask, log_softmax=True)
+            out = F.softmax(out, dim=2) * vmask
+            headi = torch.bmm(out, WVs[i])
+            heads.append(headi)
+        head = torch.cat(heads, dim=2)
+        out = torch.matmul(head, self.Wo)
+        return out.transpose(1, 2)
+
+
