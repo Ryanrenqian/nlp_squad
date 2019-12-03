@@ -54,6 +54,7 @@ def main(args):
                   hidden_size=args.hidden_size,
                   drop_prob=args.drop_prob,
                   embed_channels=args.char_embed_channel)
+    tbx.add_graph(model)
     model = nn.DataParallel(model, args.gpu_ids)
     if args.load_path:
         log.info(f'Loading checkpoint from {args.load_path}...')
